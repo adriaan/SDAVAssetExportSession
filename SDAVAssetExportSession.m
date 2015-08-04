@@ -53,9 +53,9 @@
     return self;
 }
 
-- (void)configureSession
+- (void)configureSessionWithCompletionHandler:(void (^)())handler
 {
-    
+    NSParameterAssert(handler != nil);
     [self cancelExport];
     self.completionHandler = handler;
     
@@ -184,7 +184,7 @@
     NSParameterAssert(handler != nil);
     
     if(!_isConfigured){
-        [self configureSession];
+        [self configureSessionWithCompletionHandler:handler];
     }
     
     [self.writer startWriting];

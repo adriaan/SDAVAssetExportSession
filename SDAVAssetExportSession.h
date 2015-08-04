@@ -174,6 +174,8 @@
  * @param handler A block that is invoked when writing is complete or in the event of writing failure.
  */
 - (void)exportAsynchronouslyWithCompletionHandler:(void (^)())handler;
+- (void)configureSessionWithCompletionHandler:(void (^)())handler; //call this method first if you need to configure custom video compositor before export.
+
 
 /**
  * Cancels the execution of an export session.
