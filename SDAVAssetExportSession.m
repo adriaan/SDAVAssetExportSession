@@ -177,6 +177,7 @@
     }
     
     _isConfigured = YES;
+    handler();
 }
 
 - (void)exportAsynchronouslyWithCompletionHandler:(void (^)())handler
@@ -185,6 +186,8 @@
     
     if(!_isConfigured){
         [self configureSessionWithCompletionHandler:handler];
+    } else if(handler != self.handler){
+        self.handler = handler;
     }
     
     [self.writer startWriting];
