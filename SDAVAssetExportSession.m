@@ -189,6 +189,8 @@
     
     [self.writer startWriting];
     [self.reader startReading];
+    
+     NSArray *videoTracks = [self.asset tracksWithMediaType:AVMediaTypeVideo];
     [self.writer startSessionAtSourceTime:CMTimeMake(0, ((AVAssetTrack *)videoTracks[0]).naturalTimeScale)];
 
     self.inputQueue = dispatch_queue_create("VideoEncoderInputQueue", DISPATCH_QUEUE_SERIAL);
