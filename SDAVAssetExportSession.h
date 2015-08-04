@@ -38,6 +38,11 @@
 @property (nonatomic, weak) id<SDAVAssetExportSessionDelegate> delegate;
 
 /**
+ * The AVAssetReaderVideoCompositionOutput. Exposed for access to and configuration of custom compositor
+ */
+@property (nonatomic, strong) AVAssetReaderVideoCompositionOutput *videoOutput;
+
+/**
  * The asset with which the export session was initialized.
  */
 @property (nonatomic, strong, readonly) AVAsset *asset;

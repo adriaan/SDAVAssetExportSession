@@ -18,13 +18,13 @@
 @property (nonatomic, assign, readwrite) float progress;
 
 @property (nonatomic, strong) AVAssetReader *reader;
-@property (nonatomic, strong) AVAssetReaderVideoCompositionOutput *videoOutput;
 @property (nonatomic, strong) AVAssetReaderAudioMixOutput *audioOutput;
 @property (nonatomic, strong) AVAssetWriter *writer;
 @property (nonatomic, strong) AVAssetWriterInput *videoInput;
 @property (nonatomic, strong) AVAssetWriterInputPixelBufferAdaptor *videoPixelBufferAdaptor;
 @property (nonatomic, strong) AVAssetWriterInput *audioInput;
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
+@property (nonatomic, assign) BOOL isConfigured;
 @property (nonatomic, strong) void (^completionHandler)();
 
 @end
@@ -45,6 +45,7 @@
 {
     if ((self = [super init]))
     {
+        _isConfigured = NO;
         _asset = asset;
         _timeRange = CMTimeRangeMake(kCMTimeZero, kCMTimePositiveInfinity);
     }
@@ -52,22 +53,22 @@
     return self;
 }
 
-- (void)exportAsynchronouslyWithCompletionHandler:(void (^)())handler
+- (void)configureSession
 {
-    NSParameterAssert(handler != nil);
+    
     [self cancelExport];
     self.completionHandler = handler;
-
+    
     if (!self.outputURL)
     {
         _error = [NSError errorWithDomain:AVFoundationErrorDomain code:AVErrorExportFailed userInfo:@
-        {
-            NSLocalizedDescriptionKey: @"Output URL not set"
-        }];
+                  {
+                  NSLocalizedDescriptionKey: @"Output URL not set"
+                  }];
         handler();
         return;
     }
-
+    
     NSError *readerError;
     self.reader = [AVAssetReader.alloc initWithAsset:self.asset error:&readerError];
     if (readerError)
@@ -76,7 +77,7 @@
         handler();
         return;
     }
-
+    
     NSError *writerError;
     self.writer = [AVAssetWriter assetWriterWithURL:self.outputURL fileType:self.outputFileType error:&writerError];
     if (writerError)
@@ -85,11 +86,11 @@
         handler();
         return;
     }
-
+    
     self.reader.timeRange = self.timeRange;
     self.writer.shouldOptimizeForNetworkUse = self.shouldOptimizeForNetworkUse;
     self.writer.metadata = self.metadata;
-
+    
     NSArray *videoTracks = [self.asset tracksWithMediaType:AVMediaTypeVideo];
     CGSize renderSize;
     if (self.videoComposition)
@@ -100,7 +101,7 @@
     {
         renderSize = ((AVAssetTrack *)videoTracks[0]).naturalSize;
     }
-
+    
     if (CMTIME_IS_VALID(self.timeRange.duration) && !CMTIME_IS_POSITIVE_INFINITY(self.timeRange.duration))
     {
         duration = CMTimeGetSeconds(self.timeRange.duration);
@@ -126,7 +127,7 @@
     {
         [self.reader addOutput:self.videoOutput];
     }
-
+    
     //
     // Video input
     //
@@ -145,24 +146,24 @@
         @"IOSurfaceOpenGLESFBOCompatibility": @YES,
     };
     self.videoPixelBufferAdaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:self.videoInput sourcePixelBufferAttributes:pixelBufferAttributes];
-
+    
     //
     //Audio output
     //
     NSArray *audioTracks = [self.asset tracksWithMediaType:AVMediaTypeAudio];
     if (audioTracks.count > 0) {
-      self.audioOutput = [AVAssetReaderAudioMixOutput assetReaderAudioMixOutputWithAudioTracks:audioTracks audioSettings:nil];
-      self.audioOutput.alwaysCopiesSampleData = NO;
-      self.audioOutput.audioMix = self.audioMix;
-      if ([self.reader canAddOutput:self.audioOutput])
-      {
-          [self.reader addOutput:self.audioOutput];
-      }
+        self.audioOutput = [AVAssetReaderAudioMixOutput assetReaderAudioMixOutputWithAudioTracks:audioTracks audioSettings:nil];
+        self.audioOutput.alwaysCopiesSampleData = NO;
+        self.audioOutput.audioMix = self.audioMix;
+        if ([self.reader canAddOutput:self.audioOutput])
+        {
+            [self.reader addOutput:self.audioOutput];
+        }
     } else {
         // Just in case this gets reused
         self.audioOutput = nil;
     }
-
+    
     //
     // Audio input
     //
@@ -173,6 +174,17 @@
         {
             [self.writer addInput:self.audioInput];
         }
+    }
+    
+    _isConfigured = YES;
+}
+
+- (void)exportAsynchronouslyWithCompletionHandler:(void (^)())handler
+{
+    NSParameterAssert(handler != nil);
+    
+    if(!_isConfigured){
+        [self configureSession];
     }
     
     [self.writer startWriting];
@@ -441,6 +453,7 @@
     self.audioInput = nil;
     self.inputQueue = nil;
     self.completionHandler = nil;
+    _isConfigured = NO;
 }
 
 @end
