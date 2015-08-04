@@ -187,7 +187,7 @@
     if(!_isConfigured){
         [self configureSessionWithCompletionHandler:handler];
     } else if(handler != self.handler){
-        self.handler = handler;
+        self.completionHandler = handler;
     }
     
     [self.writer startWriting];
