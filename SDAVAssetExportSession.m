@@ -186,7 +186,7 @@
     
     if(!_isConfigured){
         [self configureSessionWithCompletionHandler:handler];
-    } else if(handler != self.handler){
+    } else if(handler != self.completionHandler){
         self.completionHandler = handler;
     }
     
